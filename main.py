@@ -57,8 +57,36 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    return None
+    # 1x1 convolutional layer
+    layer7_out = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same',
+                               kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # upsampling from 1x1 convolutional layer
+    layer4_up = tf.layers.conv2d_transpose(layer7_out, num_classes, 4, 2, padding='same',
+                                        kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # skip connections from layer 4
+    layer4_skip = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same',
+                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # add upsampling and skip layers
+    layer4_out = tf.add(layer4_up, layer4_skip)
+
+    # upsampling
+    layer3_up = tf.layers.conv2d_transpose(layer4_out, num_classes, 4, 2, padding='same',
+                                            kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+
+    layer3_skip = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same',
+                                   kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    layer3_out = tf.add(layer3_up, layer3_skip)
+
+    # upsampling
+    final_layer_out = tf.layers.conv2d_transpose(layer3_out, num_classes, 4, 2, padding='same',
+                                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    return final_layer_out
+
 tests.test_layers(layers)
 
 
